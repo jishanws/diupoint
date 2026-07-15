@@ -115,8 +115,9 @@ export interface ApiSignInResponse {
 }
 
 export interface ApiSignUpResponse {
-  accessToken: string;
-  user: ApiAuthUser;
+  message: string;
+  verificationRequired: true;
+  verificationEmail: string;
 }
 
 export interface ApiVerificationRequestResponse {
@@ -128,6 +129,7 @@ export interface ApiVerificationRequestResponse {
 
 export interface ApiVerificationConfirmResponse {
   message: string;
+  user: ApiAuthUser;
 }
 
 export interface ApiFavorite {

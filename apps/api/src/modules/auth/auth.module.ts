@@ -9,10 +9,12 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { GoogleCallbackAuthGuard } from './guards/google-callback-auth.guard';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { VerificationModule } from '../verification/verification.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    VerificationModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({

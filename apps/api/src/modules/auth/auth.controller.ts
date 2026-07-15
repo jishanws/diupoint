@@ -6,6 +6,7 @@ import {
   Query,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 
@@ -82,10 +83,21 @@ export class AuthController {
           returnTo: req.user.returnTo,
         })
       );
-    } catch {
+    } catch (error) {
+      const message =
+        error instanceof UnauthorizedException ? error.message : undefined;
+      const errorCode =
+        message === 'GOOGLE_DIU_EMAIL_REQUIRED'
+          ? 'google_diu_email_required'
+          : message === 'GOOGLE_EMAIL_NOT_VERIFIED'
+            ? 'google_email_not_verified'
+            : message === 'GOOGLE_ACCOUNT_INACTIVE'
+              ? 'google_account_inactive'
+              : 'google_callback_failed';
+
       return response.redirect(
         this.authService.buildFrontendCallbackUrl({
-          error: 'google_callback_failed',
+          error: errorCode,
           returnTo: req.user?.returnTo,
         })
       );

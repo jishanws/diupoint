@@ -4,26 +4,59 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { randomInt } from 'node:crypto';
 import {
   VerificationRequestStatus,
   VerificationStatus,
 } from '../../common/legacy-prisma-enums';
+import { isDiuEmail, normalizeEmail } from '../auth/diu-email';
+import { comparePassword, hashPassword } from '../auth/password-hasher';
 
 import { ConfirmVerificationDto } from './dto/confirm-verification.dto';
 import { RequestVerificationDto } from './dto/request-verification.dto';
-import { comparePassword, hashPassword } from '../auth/password-hasher';
+import { VerificationEmailService } from './verification-email.service';
 
 const prisma: any = new PrismaClient();
-const DIU_EMAIL_DOMAINS = ['@diu.edu.bd', '@s.diu.edu.bd'];
 const OTP_EXPIRY_MINUTES = 10;
 
 @Injectable()
 export class VerificationService {
+  constructor(
+    private readonly verificationEmailService: VerificationEmailService
+  ) {}
+
   async requestVerification(userId: string, dto: RequestVerificationDto) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
+        email: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const verificationEmail = normalizeEmail(dto.verificationEmail);
+    if (verificationEmail !== user.email) {
+      throw new BadRequestException(
+        'Verification must use the email address registered to this account.'
+      );
+    }
+
+    return this.issueVerificationOtp(user.id, user.email);
+  }
+
+  async issueVerificationOtp(userId: string, verificationEmail: string) {
+    const normalizedEmail = normalizeEmail(verificationEmail);
+    this.assertDiuEmail(normalizedEmail);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
         verificationStatus: true,
       },
     });
@@ -32,12 +65,15 @@ export class VerificationService {
       throw new NotFoundException('User not found.');
     }
 
+    if (user.email !== normalizedEmail) {
+      throw new BadRequestException(
+        'Verification must use the email address registered to this account.'
+      );
+    }
+
     if (user.verificationStatus === VerificationStatus.VERIFIED) {
       throw new BadRequestException('Account is already verified.');
     }
-
-    const verificationEmail = dto.verificationEmail.trim().toLowerCase();
-    this.assertDiuEmail(verificationEmail);
 
     const otp = this.generateOtp();
     const otpCodeHash = await hashPassword(otp);
@@ -56,7 +92,7 @@ export class VerificationService {
       prisma.verificationRequest.create({
         data: {
           userId,
-          verificationEmail,
+          verificationEmail: normalizedEmail,
           otpCodeHash,
           expiresAt,
           status: VerificationRequestStatus.PENDING,
@@ -64,33 +100,27 @@ export class VerificationService {
       }),
     ]);
 
-    // Stubbed for now: in production this OTP should be emailed.
+    await this.verificationEmailService.sendOtp(normalizedEmail, otp, expiresAt);
+
     return {
-      message: 'Verification OTP generated successfully.',
-      verificationEmail,
+      message: 'Verification OTP sent successfully.',
+      verificationEmail: normalizedEmail,
       expiresAt,
-      mockOtp: process.env.NODE_ENV === 'production' ? undefined : otp,
     };
   }
 
-  async confirmVerification(userId: string, dto: ConfirmVerificationDto) {
-    const verificationEmail = dto.verificationEmail.trim().toLowerCase();
+  async confirmVerification(dto: ConfirmVerificationDto) {
+    const verificationEmail = normalizeEmail(dto.verificationEmail);
     this.assertDiuEmail(verificationEmail);
 
     const now = new Date();
-
     const verificationRequest = await prisma.verificationRequest.findFirst({
       where: {
-        userId,
         verificationEmail,
         status: VerificationRequestStatus.PENDING,
-        expiresAt: {
-          gt: now,
-        },
+        expiresAt: { gt: now },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (!verificationRequest) {
@@ -107,7 +137,7 @@ export class VerificationService {
 
     const [updatedUser] = await prisma.$transaction([
       prisma.user.update({
-        where: { id: userId },
+        where: { id: verificationRequest.userId },
         data: {
           verificationStatus: VerificationStatus.VERIFIED,
           verifiedAt: now,
@@ -130,7 +160,7 @@ export class VerificationService {
       }),
       prisma.verificationRequest.updateMany({
         where: {
-          userId,
+          userId: verificationRequest.userId,
           verificationEmail,
           status: VerificationRequestStatus.PENDING,
           id: { not: verificationRequest.id },
@@ -148,15 +178,14 @@ export class VerificationService {
   }
 
   private assertDiuEmail(email: string) {
-    const isDiu = DIU_EMAIL_DOMAINS.some((domain) => email.endsWith(domain));
-    if (!isDiu) {
+    if (!isDiuEmail(email)) {
       throw new BadRequestException(
-        'Only DIU email addresses are allowed for verification.'
+        'Only official DIU student email addresses are allowed for verification.'
       );
     }
   }
 
   private generateOtp() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return randomInt(100000, 1000000).toString();
   }
 }

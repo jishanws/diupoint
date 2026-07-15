@@ -6,10 +6,8 @@ import type {
 } from '@/lib/api/types';
 
 export interface SignUpPayload {
-  fullName: string;
   email: string;
   password: string;
-  accountType: 'PERSONAL' | 'STORE';
 }
 
 export interface SignInPayload {

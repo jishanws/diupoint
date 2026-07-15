@@ -29,7 +29,8 @@ export function isDiuEmailDomain(email: string): boolean {
 export function getVerificationStatusByEmail(
   email: string
 ): AccountVerificationStatus {
-  return isDiuEmailDomain(email) ? 'verified' : 'unverified';
+  void email;
+  return 'unverified';
 }
 
 export function getStoredAuthAccount(): AuthAccountState | null {

@@ -44,6 +44,36 @@ class EnvironmentVariables {
   @IsNotEmpty()
   FRONTEND_URL?: string;
 
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  SMTP_HOST?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  SMTP_PORT?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  SMTP_USER?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  SMTP_PASSWORD?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  SMTP_FROM?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  SMTP_SECURE?: string;
+
   @Type(() => Number)
   @IsInt()
   @Min(1)

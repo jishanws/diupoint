@@ -50,6 +50,16 @@ Create `apps/api/.env`:
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/diupoint
 JWT_SECRET=your-secret-key
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:4000/api/auth/google/callback
+FRONTEND_URL=http://localhost:3000
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM=no-reply@diu.edu.bd
+SMTP_SECURE=false
 ```
 
 ## Development Commands

@@ -13,11 +13,11 @@ type AuthenticatedRequest = {
 };
 
 @Controller('verification')
-@UseGuards(JwtAuthGuard)
 export class VerificationController {
   constructor(private readonly verificationService: VerificationService) {}
 
   @Post('request')
+  @UseGuards(JwtAuthGuard)
   requestVerification(
     @Req() req: AuthenticatedRequest,
     @Body() dto: RequestVerificationDto
@@ -26,10 +26,7 @@ export class VerificationController {
   }
 
   @Post('confirm')
-  confirmVerification(
-    @Req() req: AuthenticatedRequest,
-    @Body() dto: ConfirmVerificationDto
-  ) {
-    return this.verificationService.confirmVerification(req.user.sub, dto);
+  confirmVerification(@Body() dto: ConfirmVerificationDto) {
+    return this.verificationService.confirmVerification(dto);
   }
 }

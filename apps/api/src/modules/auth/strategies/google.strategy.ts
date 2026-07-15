@@ -5,6 +5,7 @@ import { Profile, Strategy } from 'passport-google-oauth20';
 
 export type GoogleAuthUser = {
   email: string;
+  emailVerified: boolean;
   fullName: string;
   returnTo: string;
 };
@@ -42,7 +43,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     _refreshToken: string,
     profile: Profile
   ): GoogleAuthUser {
-    const email = profile.emails?.[0]?.value?.trim().toLowerCase();
+    const email = profile._json.email?.trim().toLowerCase() ??
+      profile.emails?.[0]?.value?.trim().toLowerCase();
+    const emailVerified =
+      profile._json.email_verified === true ||
+      profile.emails?.some((candidate) => candidate.value === email && candidate.verified) ===
+        true;
 
     if (!email) {
       throw new UnauthorizedException('Google account email is unavailable.');
@@ -65,6 +71,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
     return {
       email,
+      emailVerified,
       fullName,
       returnTo: state,
     };

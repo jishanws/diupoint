@@ -25,6 +25,18 @@ function toErrorMessage(errorCode: string | null): string {
     return 'Google OAuth is not configured on the server.';
   }
 
+  if (errorCode === 'google_diu_email_required') {
+    return 'Only official DIU student Google accounts are supported.';
+  }
+
+  if (errorCode === 'google_email_not_verified') {
+    return 'Your Google email must be verified before you can use DIUPoint.';
+  }
+
+  if (errorCode === 'google_account_inactive') {
+    return 'This DIUPoint account is inactive. Please contact support.';
+  }
+
   if (errorCode === 'invalid_token') {
     return 'Google sign-in returned an invalid token.';
   }

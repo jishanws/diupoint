@@ -1,4 +1,4 @@
-import { apiRequestWithAuth } from '@/lib/api/http';
+import { apiRequest, apiRequestWithAuth } from '@/lib/api/http';
 import type {
   ApiVerificationConfirmResponse,
   ApiVerificationRequestResponse,
@@ -28,7 +28,7 @@ export async function requestVerificationOtp(
 export async function confirmVerificationOtp(
   payload: ConfirmVerificationPayload
 ): Promise<ApiVerificationConfirmResponse> {
-  return apiRequestWithAuth<ApiVerificationConfirmResponse>(
+  return apiRequest<ApiVerificationConfirmResponse>(
     '/verification/confirm',
     {
       method: 'POST',

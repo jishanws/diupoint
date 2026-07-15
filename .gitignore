@@ -4,4 +4,6 @@ node_modules
 .next
 .env
 PROJECT_CONTEXT.md
+AGENTS.md
 .kilo
+.gitignore

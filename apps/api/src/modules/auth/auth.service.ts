@@ -15,13 +15,14 @@ import {
   AccountType,
   VerificationStatus,
 } from '../../common/legacy-prisma-enums';
+import { VerificationService } from '../verification/verification.service';
 
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
+import { isDiuEmail, normalizeEmail } from './diu-email';
 import { comparePassword, hashPassword } from './password-hasher';
 import { GoogleAuthUser } from './strategies/google.strategy';
 
-const DIU_EMAIL_DOMAINS = ['@diu.edu.bd', '@s.diu.edu.bd'];
 const prisma: any = new PrismaClient();
 
 type SafeUser = {
@@ -48,37 +49,48 @@ type SafeUser = {
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly verificationService: VerificationService
   ) {}
 
   async signUp(dto: SignUpDto) {
     return this.withAuthAvailability(async () => {
-      const email = this.normalizeEmail(dto.email);
-      const fullName = this.normalizeName(dto.fullName);
+      const email = normalizeEmail(dto.email);
 
-      if (!fullName) {
-        throw new BadRequestException('Full name is required.');
+      if (!isDiuEmail(email)) {
+        throw new BadRequestException(
+          'Only official DIU student email addresses can create an account.'
+        );
       }
 
       const existingUser = await prisma.user.findUnique({ where: { email } });
 
       if (existingUser) {
+        if (
+          existingUser.verificationStatus !== VerificationStatus.VERIFIED &&
+          (await comparePassword(dto.password, existingUser.passwordHash))
+        ) {
+          await this.verificationService.issueVerificationOtp(
+            existingUser.id,
+            existingUser.email
+          );
+
+          return this.buildVerificationRequiredResponse(existingUser.email);
+        }
+
         throw new ConflictException('Email is already registered.');
       }
 
       const passwordHash = await hashPassword(dto.password);
-      const isDiuEmail = this.isDiuEmail(email);
 
       const createdUser = await prisma.user.create({
         data: {
-          fullName,
+          fullName: this.nameFromEmail(email),
           email,
           passwordHash,
-          accountType: dto.accountType,
-          verificationStatus: isDiuEmail
-            ? VerificationStatus.VERIFIED
-            : VerificationStatus.UNVERIFIED,
-          verifiedAt: isDiuEmail ? new Date() : null,
+          accountType: AccountType.PERSONAL,
+          verificationStatus: VerificationStatus.UNVERIFIED,
+          verifiedAt: null,
         },
         include: {
           storeProfile: {
@@ -94,24 +106,22 @@ export class AuthService {
         },
       });
 
-      return this.buildAuthSuccessResponse(createdUser.id, createdUser.email, {
-        id: createdUser.id,
-        fullName: createdUser.fullName,
-        email: createdUser.email,
-        accountType: createdUser.accountType,
-        verificationStatus: createdUser.verificationStatus,
-        verifiedAt: createdUser.verifiedAt,
-        isActive: createdUser.isActive,
-        createdAt: createdUser.createdAt,
-        updatedAt: createdUser.updatedAt,
-        storeProfile: createdUser.storeProfile,
-      });
+      await this.verificationService.issueVerificationOtp(
+        createdUser.id,
+        createdUser.email
+      );
+
+      return this.buildVerificationRequiredResponse(createdUser.email);
     });
   }
 
   async signIn(dto: SignInDto) {
     return this.withAuthAvailability(async () => {
-      const email = this.normalizeEmail(dto.email);
+      const email = normalizeEmail(dto.email);
+
+      if (!isDiuEmail(email)) {
+        throw new UnauthorizedException('Invalid email or password.');
+      }
 
       const user = await prisma.user.findUnique({
         where: { email },
@@ -139,6 +149,16 @@ export class AuthService {
       );
       if (!isPasswordValid) {
         throw new UnauthorizedException('Invalid email or password.');
+      }
+
+      if (!user.isActive) {
+        throw new UnauthorizedException('Unable to sign in with this account.');
+      }
+
+      if (user.verificationStatus !== VerificationStatus.VERIFIED) {
+        throw new UnauthorizedException(
+          'Please verify your DIU email before signing in.'
+        );
       }
 
       return this.buildAuthSuccessResponse(user.id, user.email, {
@@ -178,17 +198,25 @@ export class AuthService {
         throw new UnauthorizedException('Invalid access token.');
       }
 
+      if (!user.isActive) {
+        throw new UnauthorizedException('Invalid access token.');
+      }
+
       return this.toSafeUser(user);
     });
   }
 
   async signInWithGoogle(googleUser: GoogleAuthUser) {
     return this.withAuthAvailability(async () => {
-      const email = this.normalizeEmail(googleUser.email);
+      const email = normalizeEmail(googleUser.email);
       const fullName = this.normalizeName(googleUser.fullName) || 'Google User';
 
-      if (!email) {
-        throw new BadRequestException('Google account email is unavailable.');
+      if (!email || !isDiuEmail(email)) {
+        throw new UnauthorizedException('GOOGLE_DIU_EMAIL_REQUIRED');
+      }
+
+      if (!googleUser.emailVerified) {
+        throw new UnauthorizedException('GOOGLE_EMAIL_NOT_VERIFIED');
       }
 
       let user = await prisma.user.findUnique({
@@ -208,7 +236,6 @@ export class AuthService {
       });
 
       if (!user) {
-        const isDiuEmail = this.isDiuEmail(email);
         const oauthPlaceholderHash = await hashPassword(
           `google-oauth:${randomUUID()}`
         );
@@ -219,10 +246,8 @@ export class AuthService {
             email,
             passwordHash: oauthPlaceholderHash,
             accountType: AccountType.PERSONAL,
-            verificationStatus: isDiuEmail
-              ? VerificationStatus.VERIFIED
-              : VerificationStatus.UNVERIFIED,
-            verifiedAt: isDiuEmail ? new Date() : null,
+            verificationStatus: VerificationStatus.VERIFIED,
+            verifiedAt: new Date(),
           },
           include: {
             storeProfile: {
@@ -237,6 +262,32 @@ export class AuthService {
             },
           },
         });
+      } else {
+        if (!user.isActive) {
+          throw new UnauthorizedException('GOOGLE_ACCOUNT_INACTIVE');
+        }
+
+        if (user.verificationStatus !== VerificationStatus.VERIFIED) {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              verificationStatus: VerificationStatus.VERIFIED,
+              verifiedAt: new Date(),
+            },
+            include: {
+              storeProfile: {
+                select: {
+                  id: true,
+                  storeName: true,
+                  slug: true,
+                  isFeatured: true,
+                  logoUrl: true,
+                  bannerUrl: true,
+                },
+              },
+            },
+          });
+        }
       }
 
       return this.buildAuthSuccessResponse(user.id, user.email, {
@@ -343,10 +394,6 @@ export class AuthService {
     };
   }
 
-  private normalizeEmail(email: string): string {
-    return email.trim().toLowerCase();
-  }
-
   private normalizeName(fullName: string): string {
     return fullName.trim().replace(/\s+/g, ' ');
   }
@@ -383,9 +430,23 @@ export class AuthService {
     }
   }
 
-  private isDiuEmail(email: string): boolean {
-    const normalizedEmail = this.normalizeEmail(email);
-    return DIU_EMAIL_DOMAINS.some((domain) => normalizedEmail.endsWith(domain));
+  private nameFromEmail(email: string): string {
+    const localPart = email.split('@')[0] ?? 'DIU Student';
+    const name = localPart
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+      .join(' ');
+
+    return name || 'DIU Student';
+  }
+
+  private buildVerificationRequiredResponse(email: string) {
+    return {
+      message: 'A verification code has been sent to your DIU email.',
+      verificationRequired: true,
+      verificationEmail: email,
+    };
   }
 
   private toSafeUser(user: {
