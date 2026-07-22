@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { useEffect, useRef, useState } from 'react';
 import Container from '@/components/ui/container';
 import VerificationTick from '@/components/ui/verification-tick';
@@ -39,7 +38,7 @@ function SearchInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`relative w-full rounded-xl shadow-sm shadow-gray-900/3 transition-all duration-200 hover:shadow-md ${className}`}
+      className={`relative w-full rounded-full border-2 border-diu-dark bg-background shadow-[3px_3px_0_rgba(26,26,46,0.85)] transition-all duration-200 hover:-translate-y-[1px] hover:shadow-[4px_4px_0_rgba(26,26,46,0.85)] focus-within:-translate-y-[1px] focus-within:shadow-[4px_4px_0_rgba(26,26,46,0.85)] ${className}`}
     >
       <div className="pointer-events-none absolute inset-y-0 left-3.5 flex items-center sm:left-4">
         <svg
@@ -47,8 +46,8 @@ function SearchInput({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth={2}
-          className="h-4 w-4 text-gray-400 dark:text-slate-500"
+          strokeWidth={3}
+          className="h-4 w-4 text-diu-dark"
         >
           <path
             strokeLinecap="round"
@@ -65,24 +64,23 @@ function SearchInput({
             onChange(event.target.value);
             return;
           }
-
           setInternalValue(event.target.value);
         }}
         placeholder="Search DIUPoint"
-        className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 py-2.5 pl-10 pr-10 text-sm text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:placeholder-transparent outline-none transition-all duration-150 focus:border-[#2F3FBF]/40 dark:focus:border-white/20 focus:bg-white dark:focus:bg-white/8 focus:ring-2 focus:ring-[#2F3FBF]/15 dark:focus:ring-white/10 sm:pl-11 sm:pr-11 sm:py-2.5"
+        className="w-full rounded-full bg-transparent py-2.5 pl-10 pr-10 text-sm font-medium text-diu-dark placeholder-diu-dark/60 outline-none sm:pl-11 sm:pr-11 sm:py-2.5"
       />
       <button
         type="submit"
         aria-label="Search marketplace"
-        className="absolute inset-y-0 right-2 inline-flex items-center text-gray-400 transition-colors hover:text-[#2F3FBF] dark:text-slate-500 dark:hover:text-slate-200"
+        className="absolute inset-y-0 right-3 inline-flex items-center text-diu-dark transition-colors hover:text-diu-blue"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth={2}
-          className="h-4 w-4"
+          strokeWidth={3}
+          className="h-5 w-5"
         >
           <path
             strokeLinecap="round"
@@ -107,7 +105,6 @@ export default function Navbar({
   onSearchSubmit,
 }: NavbarProps) {
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const {
     isAuthenticated,
     currentUser,
@@ -162,17 +159,12 @@ export default function Navbar({
     };
   }, [isAccountMenuOpen]);
 
-  const isDark = mounted && theme === 'dark';
   const isVerified = verificationStatus === 'VERIFIED';
   const isStoreAccount = currentUser?.accountType === 'STORE';
   const accountFirstName =
     currentUser?.fullName?.trim().split(/\s+/)[0] ?? 'Account';
   const accountMenuItemClass =
-    'flex h-10 items-center rounded-lg px-3 text-sm font-medium text-gray-700 dark:text-slate-200 transition-colors hover:bg-[#2F3FBF]/8 dark:hover:bg-white/8 hover:text-[#2F3FBF] dark:hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F3FBF]/35 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900';
-
-  function toggleTheme() {
-    setTheme(isDark ? 'light' : 'dark');
-  }
+    'flex h-10 items-center rounded-lg px-3 text-sm font-semibold text-diu-dark transition-colors hover:bg-diu-blue/10 hover:text-diu-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-diu-blue';
 
   function closeAccountMenu() {
     setOpenMenuForUserId(null);
@@ -209,253 +201,189 @@ export default function Navbar({
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 shadow-sm backdrop-blur-sm transition-colors duration-200">
+    <header className="sticky top-0 z-50 w-full bg-background border-b-2 border-diu-dark">
       <Container>
-        {/*
-          Mobile  → two rows: [logo + actions] then [search]
-          Desktop → single row: logo | search | actions
-        */}
-        <div className="flex items-center gap-2 py-2.5 sm:h-16 sm:gap-6 sm:py-0 lg:gap-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 py-3 lg:py-4">
           {/* Logo */}
-          <Link
-            href={APP_ROUTES.home}
-            className="flex shrink-0 items-center"
-          >
-            <span className="text-[22px] font-black tracking-tight text-[#2F3FBF] dark:text-indigo-400 sm:text-2xl">
-              DIUPoint
-            </span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={APP_ROUTES.home}
+              className="flex shrink-0 items-center"
+            >
+              <span className="font-display font-semibold text-[clamp(22px,4vw,28px)] text-diu-dark leading-none tracking-wide">
+                DIU Point
+              </span>
+            </Link>
+          </div>
 
           {/* Search — center column on desktop only */}
           <SearchInput
-            className="hidden flex-1 sm:block"
+            className="hidden flex-1 sm:block max-w-sm mx-auto"
             value={searchQuery}
             onChange={onSearchQueryChange}
             onSubmit={handleSearchSubmit}
           />
 
           {/* Action group */}
-          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:ml-0 sm:gap-2">
-            {/* Dark mode toggle */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              aria-label={
-                isDark ? 'Switch to light mode' : 'Switch to dark mode'
-              }
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 dark:border-white/10 text-gray-500 dark:text-slate-400 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-white/8 hover:text-gray-900 dark:hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F3FBF] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 sm:h-10 sm:w-10"
-            >
-              {/* Show sun in dark mode, moon in light mode */}
-              {mounted && isDark ? (
-                /* Sun icon */
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.75}
-                  className="h-4 w-4 sm:h-5 sm:w-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
-                  />
-                </svg>
-              ) : (
-                /* Moon icon */
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.75}
-                  className="h-4 w-4 sm:h-5 sm:w-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75 9.75 9.75 0 0 1 8.25 6c0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 12c0 5.385 4.365 9.75 9.75 9.75 4.862 0 8.923-3.543 9.702-8.198a9.75 9.75 0 0 1-.7 1.2z"
-                  />
-                </svg>
-              )}
-            </button>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3 flex-wrap">
+            {/* Verified students only tag */}
+            {(!isLoading && isAuthenticated && isVerified) ? (
+              <span className="hidden lg:inline-block bg-diu-green text-white font-semibold text-xs px-3 py-1.5 rounded-full border-[2px] border-diu-dark whitespace-nowrap">
+                Verified students only ✓
+              </span>
+            ) : null}
 
             {/* Post Item */}
             <Link
               href={APP_ROUTES.postItem}
-              className="group inline-flex h-9 items-center justify-center gap-0.5 rounded-xl border border-white/25 bg-linear-to-r from-[#2F3FBF] to-[#3F5BFF] px-3 text-xs font-semibold text-white shadow-sm shadow-indigo-900/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-indigo-900/30 active:translate-y-0 active:from-[#2535a8] active:to-[#3249db] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F3FBF]/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 sm:h-10 sm:gap-1.5 sm:px-4 sm:text-sm"
+              className="bg-diu-orange text-white border-2 border-diu-dark rounded-full px-4 py-2 font-bold text-[13px] sm:text-[14px] cursor-pointer whitespace-nowrap transition-transform hover:-translate-y-[1px] active:translate-y-0"
             >
-              <span className="text-sm leading-none sm:text-base">
-                +
-              </span>
-              Post Item
+              + Post
             </Link>
 
-            {/* Sign In */}
+            {/* Sign In / Account */}
             {!isLoading && isAuthenticated ? (
-              <>
-                <div
-                  ref={accountMenuRef}
-                  className="relative"
+              <div
+                ref={accountMenuRef}
+                className="relative"
+              >
+                <button
+                  type="button"
+                  onClick={toggleAccountMenu}
+                  aria-haspopup="menu"
+                  aria-expanded={isAccountMenuOpen}
+                  aria-controls="account-menu"
+                  className="flex h-[38px] items-center gap-2 rounded-[10px] border-[2px] border-diu-dark bg-white px-2 sm:px-3 text-sm font-bold text-diu-dark hover:bg-gray-50 focus:outline-none transition-transform hover:-translate-y-[1px]"
                 >
-                  <button
-                    type="button"
-                    onClick={toggleAccountMenu}
-                    aria-haspopup="menu"
-                    aria-expanded={isAccountMenuOpen}
-                    aria-controls="account-menu"
-                    className="inline-flex h-9 items-center rounded-xl border border-gray-200 dark:border-white/10 px-2 text-xs font-medium text-gray-700 dark:text-slate-200 transition-all hover:border-[#2F3FBF]/40 dark:hover:border-white/20 hover:bg-[#2F3FBF]/5 dark:hover:bg-white/5 hover:text-[#2F3FBF] dark:hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F3FBF] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 sm:h-10 sm:gap-2 sm:px-3 sm:text-sm"
+                  <span className="hidden sm:block truncate max-w-[6rem]">{accountFirstName}</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                    className="h-4 w-4"
                   >
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#2F3FBF]/10 text-[#2F3FBF] dark:bg-indigo-300/15 dark:text-indigo-200">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={1.75}
-                        className="h-4 w-4"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"
-                        />
-                      </svg>
-                    </span>
-                    <span className="hidden max-w-[8rem] truncate sm:block">
-                      {accountFirstName}
-                    </span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.75}
-                      className={`hidden h-4 w-4 transition-transform sm:block ${isAccountMenuOpen ? 'rotate-180' : ''}`}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m6 9 6 6 6-6"
-                      />
-                    </svg>
-                  </button>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"
+                    />
+                  </svg>
+                </button>
 
-                  {isAccountMenuOpen ? (
-                    <div
-                      id="account-menu"
-                      role="menu"
-                      aria-label="Account menu"
-                      className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(90vw,20rem)] sm:w-72 overflow-hidden rounded-2xl border border-gray-200/95 bg-white/98 p-2 shadow-xl shadow-gray-900/12 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/98 dark:shadow-black/35"
-                    >
-                      <div className="mb-1 rounded-xl border border-gray-100 bg-gray-50 px-3.5 py-3 dark:border-white/8 dark:bg-white/5">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-gray-900 dark:text-slate-100">
-                              {currentUser?.fullName ?? 'Account'}
-                            </p>
-                            <p
-                              className="truncate text-xs text-gray-500 dark:text-slate-400"
-                              title={currentUser?.email}
-                            >
-                              {currentUser?.email}
-                            </p>
-                          </div>
-
-                          {isVerified ? (
-                            <VerificationTick className="shrink-0" />
-                          ) : (
-                            <span className="shrink-0 rounded-full border border-amber-300/70 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:border-amber-300/30 dark:bg-amber-300/10 dark:text-amber-200">
-                              Unverified
-                            </span>
-                          )}
+                {isAccountMenuOpen ? (
+                  <div
+                    id="account-menu"
+                    role="menu"
+                    aria-label="Account menu"
+                    className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-[min(90vw,20rem)] sm:w-64 overflow-hidden rounded-[16px] border-2 border-diu-dark bg-white p-3 shadow-[4px_4px_0_rgba(26,26,46,0.85)]"
+                  >
+                    <div className="mb-2 rounded-xl border-[2px] border-diu-dark bg-[#F7F4EC] px-3.5 py-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-diu-dark">
+                            {currentUser?.fullName ?? 'Account'}
+                          </p>
+                          <p
+                            className="truncate text-xs font-semibold text-diu-dark/70"
+                            title={currentUser?.email}
+                          >
+                            {currentUser?.email}
+                          </p>
                         </div>
+                        {isVerified ? (
+                          <VerificationTick className="shrink-0" />
+                        ) : (
+                          <span className="shrink-0 rounded-full border-[2px] border-diu-dark bg-diu-yellow px-2 py-0.5 text-[11px] font-bold text-diu-dark">
+                            Unverified
+                          </span>
+                        )}
                       </div>
-
-                      <div className="flex flex-col gap-0.5">
-                        <Link
-                          href={APP_ROUTES.myListings}
-                          role="menuitem"
-                          onClick={closeAccountMenu}
-                          className={accountMenuItemClass}
-                        >
-                          My Listings
-                        </Link>
-
-                        {isStoreAccount ? (
-                          <Link
-                            href={APP_ROUTES.storeDashboard}
-                            role="menuitem"
-                            onClick={closeAccountMenu}
-                            className={accountMenuItemClass}
-                          >
-                            Store Dashboard
-                          </Link>
-                        ) : null}
-
-                        <Link
-                          href={APP_ROUTES.cart}
-                          role="menuitem"
-                          onClick={closeAccountMenu}
-                          className={`${accountMenuItemClass} justify-between`}
-                        >
-                          <span>Cart</span>
-                          {quantityCount > 0 ? (
-                            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#2F3FBF] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
-                              {quantityCount}
-                            </span>
-                          ) : null}
-                        </Link>
-
-                        <Link
-                          href={APP_ROUTES.orders}
-                          role="menuitem"
-                          onClick={closeAccountMenu}
-                          className={accountMenuItemClass}
-                        >
-                          Orders
-                        </Link>
-
-                        <Link
-                          href={APP_ROUTES.favorites}
-                          role="menuitem"
-                          onClick={closeAccountMenu}
-                          className={accountMenuItemClass}
-                        >
-                          Saved Items
-                        </Link>
-
-                        {!isVerified ? (
-                          <Link
-                            href={createVerifyAccountHref(APP_ROUTES.home)}
-                            role="menuitem"
-                            onClick={closeAccountMenu}
-                            className={accountMenuItemClass}
-                          >
-                            Verify Account
-                          </Link>
-                        ) : null}
-                      </div>
-
-                      <div className="my-1 border-t border-gray-100 dark:border-white/8" />
-
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={handleLogout}
-                        className="flex h-10 w-full items-center rounded-lg px-3 text-left text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-300/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
-                      >
-                        Log out
-                      </button>
                     </div>
-                  ) : null}
-                </div>
-              </>
+
+                    <div className="flex flex-col gap-1">
+                      <Link
+                        href={APP_ROUTES.myListings}
+                        role="menuitem"
+                        onClick={closeAccountMenu}
+                        className={accountMenuItemClass}
+                      >
+                        My Listings
+                      </Link>
+
+                      {isStoreAccount ? (
+                        <Link
+                          href={APP_ROUTES.storeDashboard}
+                          role="menuitem"
+                          onClick={closeAccountMenu}
+                          className={accountMenuItemClass}
+                        >
+                          Store Dashboard
+                        </Link>
+                      ) : null}
+
+                      <Link
+                        href={APP_ROUTES.cart}
+                        role="menuitem"
+                        onClick={closeAccountMenu}
+                        className={`${accountMenuItemClass} justify-between`}
+                      >
+                        <span>Cart</span>
+                        {quantityCount > 0 ? (
+                          <span className="inline-flex items-center justify-center rounded-full border-[2px] border-diu-dark bg-diu-yellow px-2 py-0.5 text-[11px] font-bold leading-none text-diu-dark">
+                            {quantityCount}
+                          </span>
+                        ) : null}
+                      </Link>
+
+                      <Link
+                        href={APP_ROUTES.orders}
+                        role="menuitem"
+                        onClick={closeAccountMenu}
+                        className={accountMenuItemClass}
+                      >
+                        Orders
+                      </Link>
+
+                      <Link
+                        href={APP_ROUTES.favorites}
+                        role="menuitem"
+                        onClick={closeAccountMenu}
+                        className={accountMenuItemClass}
+                      >
+                        Saved Items
+                      </Link>
+
+                      {!isVerified ? (
+                        <Link
+                          href={createVerifyAccountHref(APP_ROUTES.home)}
+                          role="menuitem"
+                          onClick={closeAccountMenu}
+                          className={accountMenuItemClass}
+                        >
+                          Verify Account
+                        </Link>
+                      ) : null}
+                    </div>
+
+                    <div className="my-2 border-t-[2px] border-diu-dark/10" />
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleLogout}
+                      className="flex h-10 w-full items-center rounded-lg px-3 text-left text-sm font-bold text-diu-orange transition-colors hover:bg-diu-orange/10 focus:outline-none"
+                    >
+                      Log out
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             ) : (
               <Link
                 href={APP_ROUTES.signIn}
-                className="flex h-9 items-center rounded-xl border border-gray-200 dark:border-white/10 px-3 text-xs font-medium text-gray-600 dark:text-slate-300 transition-all hover:border-[#2F3FBF]/40 dark:hover:border-white/20 hover:bg-[#2F3FBF]/5 dark:hover:bg-white/5 hover:text-[#2F3FBF] dark:hover:text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F3FBF] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 sm:h-10 sm:px-4 sm:text-sm"
+                className="flex h-[38px] items-center rounded-[10px] border-[2px] border-diu-dark bg-white px-3 text-[13px] sm:text-[14px] font-bold text-diu-dark transition-transform hover:-translate-y-[1px]"
               >
                 Sign In
               </Link>
@@ -464,7 +392,7 @@ export default function Navbar({
         </div>
 
         {/* Search row — mobile only */}
-        <div className="px-0.5 pb-2.5 pt-1.5 sm:hidden">
+        <div className="px-0.5 pb-3 sm:hidden mt-1">
           <SearchInput
             value={searchQuery}
             onChange={onSearchQueryChange}

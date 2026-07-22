@@ -1,18 +1,19 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Fredoka, Poppins } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/lib/auth/auth-context';
 import { CartProvider } from '@/lib/cart/cart-context';
 import { FavoritesProvider } from '@/lib/favorites/favorites-context';
 import ThemeProvider from '@/components/providers/theme-provider';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const fredoka = Fredoka({
+  variable: '--font-fredoka',
   subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const poppins = Poppins({
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-poppins',
   subsets: ['latin'],
 });
 
@@ -33,7 +34,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${fredoka.variable} ${poppins.variable} font-sans antialiased bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"

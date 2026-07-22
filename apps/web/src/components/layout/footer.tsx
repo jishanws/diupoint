@@ -1,49 +1,33 @@
 import Container from '@/components/ui/container';
 
-const INFO_LINKS = ['About Us', 'Contact', 'Terms of Service', 'FAQ'];
+const INFO_LINKS = [
+  { label: 'Categories', href: '#categories' },
+  { label: 'Trending', href: '#trending' },
+  { label: 'How it works', href: '#how' },
+  { label: 'Safety', href: '#' },
+];
 
 export default function Footer() {
   return (
-    <footer className="py-10 md:py-12">
+    <footer className="border-t-2 border-diu-dark py-6 sm:py-10 bg-background text-diu-dark">
       <Container>
-        {/* Main row */}
-        <div className="flex flex-col items-start gap-7 sm:flex-row sm:items-center sm:justify-between sm:gap-12">
-          {/* Brand */}
-          <div className="max-w-xs text-left">
-            <span className="text-base font-extrabold tracking-tight text-[#2F3FBF]">
-              DIUPoint
-            </span>
-            <p className="mt-1.5 text-sm leading-relaxed text-gray-500 dark:text-slate-400">
-              A student-to-student marketplace for
-              <br className="hidden sm:block" /> Daffodil International
-              University.
-            </p>
-          </div>
-
-          {/* Info links */}
-          <nav
-            aria-label="Footer navigation"
-            className="w-full sm:w-auto"
-          >
-            <ul className="grid grid-cols-2 gap-x-6 gap-y-2 sm:flex sm:flex-wrap sm:justify-end sm:gap-x-8">
+        <div className="flex flex-wrap items-center justify-between gap-5">
+          <span className="font-display font-semibold text-xl">DIU Point</span>
+          <nav aria-label="Footer navigation">
+            <ul className="flex flex-wrap items-center gap-4 sm:gap-5 font-semibold text-[13px]">
               {INFO_LINKS.map((link) => (
-                <li key={link}>
-                  <a
-                    href="#"
-                    className="text-sm text-gray-500 dark:text-slate-400 underline-offset-2 transition-colors hover:text-[#2F3FBF] dark:hover:text-indigo-400 hover:underline"
-                  >
-                    {link}
+                <li key={link.label}>
+                  <a href={link.href} className="text-diu-dark transition-colors hover:text-diu-blue">
+                    {link.label}
                   </a>
                 </li>
               ))}
             </ul>
           </nav>
+          <span className="text-[12.5px] opacity-70 font-normal">
+            Made by DIU students, for DIU students.
+          </span>
         </div>
-
-        {/* Copyright */}
-        <p className="mt-8 border-t border-gray-200 dark:border-white/10 pt-5 text-left text-xs text-gray-400/80 sm:text-center dark:text-slate-500">
-          © 2026 DIUPoint
-        </p>
       </Container>
     </footer>
   );

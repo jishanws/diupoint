@@ -3,23 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Container from '@/components/ui/container';
-import LandingBanner from '@/components/ui/landing-banner';
-import SectionHeader from '@/components/ui/section-header';
 import ListingCard from '@/components/ui/listing-card';
-import StoreCard from '@/components/ui/store-card';
-import CategoryFilter, {
-  type CategoryConditionFilter,
-} from '@/components/layout/category-filter';
-import {
-  CATEGORIES,
-  type Listing,
-} from '@/data/mock-listings';
-import { FEATURED_STORES } from '@/data/mock-stores';
+import { CATEGORIES, type Listing } from '@/data/mock-listings';
 import { buildMixedLatestFeed } from '@/lib/api/home';
 import { fetchListings } from '@/lib/api/listings';
 import { APP_ROUTES } from '@/lib/routes';
+import HowItWorks from '@/components/home/how-it-works';
+import Testimonials from '@/components/home/testimonials';
 
-const HOMEPAGE_FEATURED_STORES = FEATURED_STORES.slice(0, 4);
+// Map categories for filtering
 const CATEGORY_LABEL_BY_ID = CATEGORIES.reduce<Record<string, string>>(
   (acc, category) => {
     acc[category.id] = category.label;
@@ -28,103 +20,6 @@ const CATEGORY_LABEL_BY_ID = CATEGORIES.reduce<Record<string, string>>(
   {}
 );
 
-interface ListingSectionProps {
-  title: string;
-  icon?: string;
-  subtitle?: string;
-  listings: Listing[];
-  className: string;
-  viewAllHref?: string;
-  emptyTitle?: string;
-  emptyDescription?: string;
-}
-
-function SectionFooterViewAllLink({ href }: { href: string }) {
-  return (
-    <div className="mt-4 flex justify-end sm:mt-5">
-      <Link
-        href={href}
-        className="group inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-gray-600 transition-colors duration-150 hover:text-[#2F3FBF] focus:outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#2F3FBF]/25 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:text-slate-300 dark:hover:text-indigo-300 dark:focus-visible:ring-white/20 dark:focus-visible:ring-offset-slate-950"
-      >
-        <span className="whitespace-nowrap">View all</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5"
-        >
-          <path
-            fillRule="evenodd"
-            d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-            clipRule="evenodd"
-          />
-        </svg>
-      </Link>
-    </div>
-  );
-}
-
-function ListingSection({
-  title,
-  icon,
-  subtitle,
-  listings,
-  className,
-  viewAllHref,
-  emptyTitle = 'No listings yet',
-  emptyDescription = 'Be the first to post in this category.',
-}: ListingSectionProps) {
-  return (
-    <div className={className}>
-      <Container className="py-8 sm:py-10">
-        <section>
-          <SectionHeader
-            title={title}
-            icon={icon}
-            subtitle={subtitle}
-          />
-          {listings.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
-              {listings.map((listing) => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-200 dark:border-white/10 bg-white dark:bg-slate-800 py-14 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-slate-700">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  className="h-6 w-6 text-gray-400 dark:text-slate-500"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
-                  />
-                </svg>
-              </div>
-              <p className="mt-3 text-sm font-medium text-gray-600 dark:text-slate-400">
-                {emptyTitle}
-              </p>
-              <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
-                {emptyDescription}
-              </p>
-            </div>
-          )}
-          {viewAllHref ? <SectionFooterViewAllLink href={viewAllHref} /> : null}
-        </section>
-      </Container>
-    </div>
-  );
-}
-
 interface HomePageClientProps {
   initialLatestListingsFeed: Listing[];
   initialFreshFromStores: Listing[];
@@ -132,149 +27,132 @@ interface HomePageClientProps {
 
 export default function HomePageClient({
   initialLatestListingsFeed,
-  initialFreshFromStores,
 }: HomePageClientProps) {
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [activeCondition, setActiveCondition] =
-    useState<CategoryConditionFilter>('all');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [latestListingsFeed, setLatestListingsFeed] =
     useState<Listing[]>(initialLatestListingsFeed);
-  const [freshFromStores, setFreshFromStores] =
-    useState<Listing[]>(initialFreshFromStores);
 
   useEffect(() => {
     let cancelled = false;
-
     async function loadListings() {
       try {
         const { listings } = await fetchListings();
-
-        if (cancelled || listings.length === 0) {
-          return;
-        }
-
+        if (cancelled || listings.length === 0) return;
         setLatestListingsFeed(buildMixedLatestFeed(listings).slice(0, 18));
-        setFreshFromStores(
-          listings
-            .filter((listing) => listing.sellerType === 'store')
-            .slice(0, 8)
-        );
       } catch {
-        // Keep server-provided data when client refresh fails.
+        // Keep server-provided data
       }
     }
-
     void loadListings();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const latestListings = useMemo(() => {
     return latestListingsFeed.filter((listing) => {
-      const categoryMatches =
-        activeCategory === 'all' ||
-        listing.category === CATEGORY_LABEL_BY_ID[activeCategory];
-      const conditionMatches =
-        activeCondition === 'all' ||
-        listing.condition === activeCondition;
-
-      return categoryMatches && conditionMatches;
+      if (!activeCategory) return true;
+      const label = CATEGORY_LABEL_BY_ID[activeCategory];
+      return listing.category === label;
     });
-  }, [activeCategory, activeCondition, latestListingsFeed]);
+  }, [activeCategory, latestListingsFeed]);
 
-  const latestListingsSubtitle = useMemo(() => {
-    if (activeCategory === 'all' && activeCondition === 'all') {
-      return 'A mix of student and store listings';
-    }
-
-    if (activeCategory === 'all') {
-      return `Latest ${activeCondition} listings across DIU`;
-    }
-
-    const categoryLabel =
-      CATEGORY_LABEL_BY_ID[activeCategory]?.toLowerCase() ?? 'category';
-
-    if (activeCondition === 'all') {
-      return `Latest ${categoryLabel} listings across DIU`;
-    }
-
-    return `Latest ${activeCondition} ${categoryLabel} listings across DIU`;
-  }, [activeCategory, activeCondition]);
+  function toggleCategory(cat: string) {
+    setActiveCategory(prev => prev === cat ? null : cat);
+  }
 
   return (
-    <>
-      <CategoryFilter
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
-        activeCondition={activeCondition}
-        onConditionChange={setActiveCondition}
-      />
-
-      <main>
-        <ListingSection
-          title="Latest Listings"
-          subtitle={latestListingsSubtitle}
-          listings={latestListings}
-          className="bg-white dark:bg-slate-950"
-          viewAllHref={APP_ROUTES.recentListings}
-          emptyTitle="No listings match these filters yet."
-          emptyDescription="Try another category or condition."
-        />
-
-        <div className="bg-gray-50 dark:bg-slate-900">
-          <Container className="py-7 sm:py-8">
-            <section>
-              <SectionHeader
-                title="Fresh from Stores"
-                subtitle="Picks from student-run stores"
-              />
-              <div className="scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:gap-4 sm:px-6 lg:mx-0 lg:px-0">
-                {freshFromStores.map((listing) => (
-                  <div
-                    key={listing.id}
-                    className="w-[72vw] shrink-0 sm:w-[42vw] lg:w-[20rem]"
-                  >
-                    <ListingCard listing={listing} />
-                  </div>
-                ))}
-              </div>
-              <SectionFooterViewAllLink
-                href={`${APP_ROUTES.recentListings}?seller=store`}
-              />
-            </section>
-          </Container>
+    <main className="bg-background text-foreground min-h-screen">
+      {/* HERO */}
+      <Container className="pt-10 pb-12 sm:pt-14 sm:pb-16">
+        <div className="relative -rotate-[1deg] bg-diu-blue border-[3px] border-diu-dark rounded-[20px] p-6 sm:p-10 shadow-[6px_6px_0_rgba(26,26,46,0.85)]">
+          <div className="absolute -top-3.5 right-6 sm:right-10 rotate-[5deg] bg-diu-yellow text-diu-dark font-bold text-[11px] sm:text-[13px] px-4 py-1.5 rounded-full border-2 border-diu-dark whitespace-nowrap z-10">
+            only for DIU students
+          </div>
+          <div className="rotate-[1deg] w-full max-w-2xl sm:ml-2 lg:ml-4">
+            <h1 className="font-display font-semibold text-[clamp(30px,7vw,52px)] leading-[1.1] mb-4 text-white">
+              Buy it. Sell it.<br />Campus style.
+            </h1>
+            <p className="text-[clamp(14px,2vw,17px)] font-medium text-white/90 max-w-lg mb-8">
+              Textbooks, gadgets, hostel gear, cycles & sublets — traded student to student, only on Daffodil International University campus.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg mt-2">
+              <Link href={APP_ROUTES.postItem} className="flex-1 flex items-center justify-center text-center bg-diu-orange text-white border-[2px] border-diu-dark rounded-[12px] py-3.5 px-4 font-bold text-[15px] cursor-pointer shadow-[3px_3px_0_rgba(26,26,46,0.85)] transition-transform hover:-translate-y-0.5 active:translate-y-0">
+                + Post an item
+              </Link>
+              <a href="#trending" className="flex-1 flex items-center justify-center text-center bg-white text-diu-dark border-[2px] border-diu-dark rounded-[12px] py-3.5 px-4 font-bold text-[15px] cursor-pointer transition-colors hover:shadow-[3px_3px_0_rgba(26,26,46,0.85)]">
+                Browse marketplace
+              </a>
+            </div>
+          </div>
         </div>
+      </Container>
 
-        <div className="bg-white dark:bg-slate-950">
-          <Container className="py-7 sm:py-8">
-            <section>
-              <SectionHeader
-                title="Featured Stores"
-                subtitle="Trusted storefronts to follow"
-              />
-              <div className="scrollbar-hide -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:gap-4 sm:px-6 lg:mx-0 lg:px-0">
-                {HOMEPAGE_FEATURED_STORES.map((store) => (
-                  <div
-                    key={store.id}
-                    className="w-[82vw] shrink-0 sm:w-[20rem]"
-                  >
-                    <StoreCard store={store} />
-                  </div>
-                ))}
+      {/* CATEGORIES */}
+      <section id="categories">
+        <Container className="py-6 sm:py-10">
+          <h2 className="font-display font-semibold text-[clamp(22px,4vw,30px)] mb-5 text-diu-dark text-center sm:text-left">Shop by category</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+            <button onClick={() => toggleCategory('books')} className={`flex flex-col items-center justify-center text-center bg-white border-2 border-diu-dark rounded-xl p-5 transition-all hover:-translate-y-1 ${activeCategory === 'books' ? 'shadow-[3px_3px_0_rgba(255,110,74,0.85)] border-diu-orange bg-diu-orange/5' : 'shadow-[3px_3px_0_rgba(26,26,46,0.85)]'}`}>
+              <div className="w-12 h-12 mb-3.5 rounded-full bg-diu-blue border-2 border-diu-dark flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 48 48" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M8 10 C8 8 10 8 12 8 L22 8 L22 38 L12 38 C10 38 8 38 8 36 Z"></path><path d="M40 10 C40 8 38 8 36 8 L26 8 L26 38 L36 38 C38 38 40 38 40 36 Z"></path><path d="M24 9 L24 38"></path></svg>
               </div>
-            </section>
-          </Container>
-        </div>
+              <span className="font-bold text-[14px] text-diu-dark">Books & notes</span>
+            </button>
+            <button onClick={() => toggleCategory('electronics')} className={`flex flex-col items-center justify-center text-center bg-white border-2 border-diu-dark rounded-xl p-5 transition-all hover:-translate-y-1 ${activeCategory === 'electronics' ? 'shadow-[3px_3px_0_rgba(255,110,74,0.85)] border-diu-orange bg-diu-orange/5' : 'shadow-[3px_3px_0_rgba(26,26,46,0.85)]'}`}>
+              <div className="w-12 h-12 mb-3.5 rounded-full bg-diu-orange border-2 border-diu-dark flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 48 48" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="10" y="6" width="28" height="36" rx="6"></rect><line x1="18" y1="12" x2="30" y2="12"></line><circle cx="24" cy="34" r="2" fill="#fff" stroke="none"></circle></svg>
+              </div>
+              <span className="font-bold text-[14px] text-diu-dark">Electronics</span>
+            </button>
+            <button onClick={() => toggleCategory('room')} className={`flex flex-col items-center justify-center text-center bg-white border-2 border-diu-dark rounded-xl p-5 transition-all hover:-translate-y-1 ${activeCategory === 'room' ? 'shadow-[3px_3px_0_rgba(255,110,74,0.85)] border-diu-orange bg-diu-orange/5' : 'shadow-[3px_3px_0_rgba(26,26,46,0.85)]'}`}>
+              <div className="w-12 h-12 mb-3.5 rounded-full bg-diu-green border-2 border-diu-dark flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 48 48" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="14" y1="8" x2="14" y2="28"></line><line x1="12" y1="8" x2="36" y2="8"></line><line x1="10" y1="28" x2="38" y2="28"></line><line x1="12" y1="28" x2="12" y2="40"></line><line x1="36" y1="28" x2="36" y2="40"></line></svg>
+              </div>
+              <span className="font-bold text-[14px] text-diu-dark">Room essentials</span>
+            </button>
+            <button onClick={() => toggleCategory('fashion')} className={`flex flex-col items-center justify-center text-center bg-white border-2 border-diu-dark rounded-xl p-5 transition-all hover:-translate-y-1 ${activeCategory === 'fashion' ? 'shadow-[3px_3px_0_rgba(255,110,74,0.85)] border-diu-orange bg-diu-orange/5' : 'shadow-[3px_3px_0_rgba(26,26,46,0.85)]'}`}>
+              <div className="w-12 h-12 mb-3.5 rounded-full bg-diu-yellow border-2 border-diu-dark flex items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 48 48" fill="none" stroke="#1A1A2E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M24 10 a3.2 3.2 0 1 1 -0.1 0"></path><path d="M24 14 L8 27 L20 27 L24 22 L28 27 L40 27 Z"></path></svg>
+              </div>
+              <span className="font-bold text-[14px] text-diu-dark">Fashion & more</span>
+            </button>
+          </div>
+          {activeCategory && (
+            <div className="mt-6 flex sm:justify-start justify-center">
+              <button onClick={() => setActiveCategory(null)} className="inline-flex items-center gap-2 bg-diu-dark text-white rounded-full px-5 py-2 font-semibold text-[13px] cursor-pointer hover:bg-gray-800 transition-colors">
+                Showing: {CATEGORY_LABEL_BY_ID[activeCategory]} ✕
+              </button>
+            </div>
+          )}
+        </Container>
+      </section>
 
-        <LandingBanner
-          title="Ready to sell?"
-          subtitle="Post your item in seconds and reach hundreds of DIU students looking for what you have."
-          buttonText="Post Now"
-          buttonHref={APP_ROUTES.postItem}
-        />
-      </main>
-    </>
+      {/* TRENDING LISTINGS */}
+      <section id="trending">
+      <Container className="py-10 sm:py-14">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-6">
+          <h2 className="font-display font-semibold text-[clamp(22px,4vw,30px)] m-0 text-diu-dark">Trending on campus</h2>
+          <span className="text-[13px] font-medium opacity-60 text-diu-dark">
+            {latestListings.length} {latestListings.length === 1 ? 'item' : 'items'}
+          </span>
+        </div>
+        {latestListings.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {latestListings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        ) : (
+          <div className="border-[3px] border-dashed border-diu-dark rounded-[16px] p-8 text-center font-semibold opacity-70 text-diu-dark">
+            No items match this category yet — be the first to post one!
+          </div>
+        )}
+      </Container>
+      </section>
+
+      <HowItWorks />
+      <Testimonials />
+
+    </main>
   );
 }
